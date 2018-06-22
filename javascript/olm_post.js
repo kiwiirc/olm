@@ -1,4 +1,5 @@
-var runtime = Module['Runtime'];
+var stackSave = Module['stackSave'];
+var stackRestore = Module['stackRestore'];
 var malloc = Module['_malloc'];
 var free = Module['_free'];
 var Pointer_stringify = Module['Pointer_stringify'];
@@ -17,11 +18,11 @@ var NULL_BYTE_PADDING_LENGTH = 1;
  * If size_or_array is a Number, allocates that number of zero-initialised bytes.
  */
 function stack(size_or_array) {
-    return Module['allocate'](size_or_array, 'i8', Module['ALLOC_STACK']);
+    return allocate(size_or_array, 'i8', ALLOC_STACK);
 }
 
 function array_from_string(string) {
-    return Module['intArrayFromString'](string, true);
+    return intArrayFromString(string, true);
 }
 
 function random_stack(size) {
@@ -33,11 +34,11 @@ function random_stack(size) {
 
 function restore_stack(wrapped) {
     return function() {
-        var sp = runtime.stackSave();
+        var sp = stackSave();
         try {
             return wrapped.apply(this, arguments);
         } finally {
-            runtime.stackRestore(sp);
+            stackRestore(sp);
         }
     }
 }
@@ -472,8 +473,6 @@ olm_exports["get_library_version"] = restore_stack(function() {
     ];
 });
 
-})();
-
 // export the olm functions into the environment.
 //
 // make sure that we do this *after* populating olm_exports, so that we don't
@@ -490,3 +489,5 @@ if (typeof(window) !== 'undefined') {
     // Olm in the global scope for browserified and webpacked apps.)
     window["Olm"] = olm_exports;
 }
+
+} // end function postinit()

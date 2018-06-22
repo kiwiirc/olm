@@ -1,3 +1,5 @@
+function postinit() { // function scope ends in last --post-js file (olm_post.js)
+
 /* The 'length' argument to Pointer_stringify doesn't work if the input includes
  * characters >= 128; we therefore need to add a NULL character to all of our
  * strings. This acts as a symbolic constant to help show what we're doing.

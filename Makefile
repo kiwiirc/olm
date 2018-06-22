@@ -7,6 +7,8 @@ BUILD_DIR := build
 RELEASE_OPTIMIZE_FLAGS ?= -g -O3
 DEBUG_OPTIMIZE_FLAGS ?= -g -O0
 JS_OPTIMIZE_FLAGS ?= -O3
+# causes closure compiler to produce human readable symbol names
+# export EMCC_CLOSURE_ARGS = --debug
 FUZZING_OPTIMIZE_FLAGS ?= -O3
 CC = gcc
 EMCC = emcc
@@ -60,9 +62,14 @@ CXXFLAGS += -Wall -Werror -std=c++11 -fPIC
 LDFLAGS += -Wall -Werror
 
 EMCCFLAGS = --closure 1 --memory-init-file 0 -s NO_FILESYSTEM=1 -s INVOKE_RUN=0
+
+# WASM=1 is now default; causes async initialization at require time by default;
+# needs additional work to bundle for web synchronously.
+EMCCFLAGS += -s WASM=0
+
 # NO_BROWSER is kept for compatibility with emscripten 1.35.24, but is no
 # longer needed.
-EMCCFLAGS += -s NO_BROWSER=1
+# EMCCFLAGS += -s NO_BROWSER=1
 
 EMCC.c = $(EMCC) $(CFLAGS) $(CPPFLAGS) -c
 EMCC.cc = $(EMCC) $(CXXFLAGS) $(CPPFLAGS) -c
