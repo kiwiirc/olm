@@ -77,14 +77,14 @@ InboundGroupSession.prototype['decrypt'] = restore_stack(function(
 
     try {
         message_buffer = malloc(message.length);
-        Module['writeAsciiToMemory'](message, message_buffer, true);
+        writeAsciiToMemory(message, message_buffer, true);
 
         var max_plaintext_length = inbound_group_session_method(
             Module['_olm_group_decrypt_max_plaintext_length']
         )(this.ptr, message_buffer, message.length);
 
         // caculating the length destroys the input buffer, so we need to re-copy it.
-        Module['writeAsciiToMemory'](message, message_buffer, true);
+        writeAsciiToMemory(message, message_buffer, true);
 
         plaintext_buffer = malloc(max_plaintext_length + NULL_BYTE_PADDING_LENGTH);
         var message_index = stack(4);
@@ -100,14 +100,14 @@ InboundGroupSession.prototype['decrypt'] = restore_stack(function(
 
         // UTF8ToString requires a null-terminated argument, so add the
         // null terminator.
-        Module['setValue'](
+        setValue(
             plaintext_buffer+plaintext_length,
             0, "i8"
         );
 
         return {
             "plaintext": UTF8ToString(plaintext_buffer),
-            "message_index": Module['getValue'](message_index, "i32")
+            "message_index": getValue(message_index, "i32")
         }
     } finally {
         if (message_buffer !== undefined) {

@@ -2,7 +2,6 @@ var stackSave = Module['stackSave'];
 var stackRestore = Module['stackRestore'];
 var malloc = Module['_malloc'];
 var free = Module['_free'];
-var Pointer_stringify = Module['Pointer_stringify'];
 var OLM_ERROR = Module['_olm_error']();
 
 /* The 'length' argument to Pointer_stringify doesn't work if the input
@@ -339,14 +338,14 @@ Session.prototype['encrypt'] = restore_stack(function(
 
         // UTF8ToString requires a null-terminated argument, so add the
         // null terminator.
-        Module['setValue'](
+        setValue(
             message_buffer+message_length,
             0, "i8"
         );
 
         return {
             "type": message_type,
-            "body": Module['UTF8ToString'](message_buffer),
+            "body": UTF8ToString(message_buffer),
         };
     } finally {
         if (plaintext_buffer !== undefined) {
@@ -367,14 +366,14 @@ Session.prototype['decrypt'] = restore_stack(function(
 
     try {
         message_buffer = malloc(message.length);
-        Module['writeAsciiToMemory'](message, message_buffer, true);
+        writeAsciiToMemory(message, message_buffer, true);
 
         max_plaintext_length = session_method(
             Module['_olm_decrypt_max_plaintext_length']
         )(this.ptr, message_type, message_buffer, message.length);
 
         // caculating the length destroys the input buffer, so we need to re-copy it.
-        Module['writeAsciiToMemory'](message, message_buffer, true);
+        writeAsciiToMemory(message, message_buffer, true);
 
         plaintext_buffer = malloc(max_plaintext_length + NULL_BYTE_PADDING_LENGTH);
 
@@ -386,7 +385,7 @@ Session.prototype['decrypt'] = restore_stack(function(
 
         // UTF8ToString requires a null-terminated argument, so add the
         // null terminator.
-        Module['setValue'](
+        setValue(
             plaintext_buffer+plaintext_length,
             0, "i8"
         );
