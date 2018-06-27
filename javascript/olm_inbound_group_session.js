@@ -71,7 +71,7 @@ InboundGroupSession.prototype['import_session'] = restore_stack(function(session
 });
 
 InboundGroupSession.prototype['decrypt'] = restore_stack(function(
-    message
+    message, returnAsBytes
 ) {
     var message_buffer, plaintext_buffer, plaintext_length;
 
@@ -86,7 +86,11 @@ InboundGroupSession.prototype['decrypt'] = restore_stack(function(
         // caculating the length destroys the input buffer, so we need to re-copy it.
         writeAsciiToMemory(message, message_buffer, true);
 
-        plaintext_buffer = malloc(max_plaintext_length + NULL_BYTE_PADDING_LENGTH);
+        var padding = 0;
+        if (!returnAsBytes)
+            padding = NULL_BYTE_PADDING_LENGTH;
+
+        plaintext_buffer = malloc(max_plaintext_length + padding);
         var message_index = stack(4);
 
         plaintext_length = inbound_group_session_method(
@@ -98,16 +102,27 @@ InboundGroupSession.prototype['decrypt'] = restore_stack(function(
             message_index
         );
 
-        // UTF8ToString requires a null-terminated argument, so add the
-        // null terminator.
-        setValue(
-            plaintext_buffer+plaintext_length,
-            0, "i8"
-        );
+        if (returnAsBytes) {
+            var bytes = Module['HEAPU8'].slice(
+                plaintext_buffer,
+                plaintext_buffer + plaintext_length
+            );
+            return {
+                'plaintext': bytes,
+                'message_index': getValue(message_index, 'i32')
+            };
+        } else {
+            // UTF8ToString requires a null-terminated argument, so add the
+            // null terminator.
+            setValue(
+                plaintext_buffer+plaintext_length,
+                0, "i8"
+            );
 
-        return {
-            "plaintext": UTF8ToString(plaintext_buffer),
-            "message_index": getValue(message_index, "i32")
+            return {
+                "plaintext": UTF8ToString(plaintext_buffer),
+                "message_index": getValue(message_index, "i32")
+            }
         }
     } finally {
         if (message_buffer !== undefined) {
@@ -115,7 +130,7 @@ InboundGroupSession.prototype['decrypt'] = restore_stack(function(
         }
         if (plaintext_buffer !== undefined) {
             // don't leave a copy of the plaintext in the heap.
-            bzero(plaintext_buffer, plaintext_length + NULL_BYTE_PADDING_LENGTH);
+            bzero(plaintext_buffer, plaintext_length + padding);
             free(plaintext_buffer);
         }
     }

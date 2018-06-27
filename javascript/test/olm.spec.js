@@ -94,9 +94,13 @@ describe("olm", function() {
         var TEST_BUFFER = Buffer.from('0000deadbeef0000', 'hex');
         encrypted = aliceSession.encrypt(TEST_BUFFER);
         expect(encrypted.type).toEqual(1);
-        decrypted = bobSession.decrypt_to_buffer(encrypted.type, encrypted.body);
+        decrypted = bobSession.decrypt(encrypted.type, encrypted.body, true);
         console.log(TEST_BUFFER, "->", Buffer.from(decrypted));
         // this version of jasmine can't compare TypedArrays directly
-        expect(Array.from(decrypted)).toEqual(Array.from(TEST_BUFFER));
+        expect(
+            Array.from(decrypted)
+        ).toEqual(
+            Array.from(TEST_BUFFER)
+        );
     });
 });
