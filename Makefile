@@ -6,9 +6,9 @@ PREFIX ?= /usr/local
 BUILD_DIR := build
 RELEASE_OPTIMIZE_FLAGS ?= -g -O3
 DEBUG_OPTIMIZE_FLAGS ?= -g -O0
-JS_OPTIMIZE_FLAGS ?= -O3
+# JS_OPTIMIZE_FLAGS ?= -O3
 # causes closure compiler to produce human readable symbol names
-# export EMCC_CLOSURE_ARGS = --debug
+export EMCC_CLOSURE_ARGS = --debug
 FUZZING_OPTIMIZE_FLAGS ?= -O3
 CC = gcc
 EMCC = emcc
