@@ -11,6 +11,9 @@ function stack(size_or_array) {
 }
 
 function array_from_string(string) {
+    if (string instanceof Uint8Array) {
+        return string;
+    }
     return intArrayFromString(string, true);
 }
 
@@ -357,7 +360,7 @@ Session.prototype['matches_inbound_from'] = restore_stack(function(
 Session.prototype['encrypt'] = restore_stack(function(
     plaintext
 ) {
-    var plaintext_buffer, message_buffer, plaintext_length, random, random_length;
+    var plaintext_buffer, message_buffer, plaintext_length, random, random_length, plaintext_alloc_length;
     try {
         random_length = session_method(
             Module['_olm_encrypt_random_length']
@@ -365,8 +368,9 @@ Session.prototype['encrypt'] = restore_stack(function(
         var message_type = session_method(
             Module['_olm_encrypt_message_type']
         )(this.ptr);
-
-        plaintext_length = lengthBytesUTF8(plaintext);
+        
+        plaintext_length = plaintext instanceof Uint8Array ? plaintext.length : lengthBytesUTF8(plaintext);
+        plaintext_alloc_length = plaintext_length + (plaintext instanceof Uint8Array ? 0 : NULL_BYTE_PADDING_LENGTH);
         var message_length = session_method(
             Module['_olm_encrypt_message_length']
         )(this.ptr, plaintext_length);
@@ -375,8 +379,15 @@ Session.prototype['encrypt'] = restore_stack(function(
 
         // need to allow space for the terminator (which stringToUTF8 always
         // writes), hence + 1.
-        plaintext_buffer = malloc(plaintext_length + 1);
-        stringToUTF8(plaintext, plaintext_buffer, plaintext_length + 1);
+        plaintext_buffer = malloc(plaintext_alloc_length);
+        
+        if (plaintext instanceof Uint8Array) {
+            // write plaintext to allocated heap buffer
+            (new Uint8Array(Module['HEAPU8'].buffer, plaintext_buffer, plaintext_length)).set(plaintext);
+            // setValue(plaintext_buffer, plaintext, 'i8') // TODO: didn't work i guess? investigate if there's something like this that simply replaces the above line
+        } else {
+            stringToUTF8(plaintext, plaintext_buffer, plaintext_alloc_length);
+        }
 
         message_buffer = malloc(message_length + NULL_BYTE_PADDING_LENGTH);
 
@@ -405,7 +416,7 @@ Session.prototype['encrypt'] = restore_stack(function(
         }
         if (plaintext_buffer !== undefined) {
             // don't leave a copy of the plaintext in the heap.
-            bzero(plaintext_buffer, plaintext_length + 1);
+            bzero(plaintext_buffer, plaintext_alloc_length);
             free(plaintext_buffer);
         }
         if (message_buffer !== undefined) {
@@ -415,9 +426,11 @@ Session.prototype['encrypt'] = restore_stack(function(
 });
 
 Session.prototype['decrypt'] = restore_stack(function(
-    message_type, message
+    message_type, message, return_type
 ) {
     var message_buffer, plaintext_buffer, max_plaintext_length;
+
+    return_type = return_type || String
 
     try {
         message_buffer = malloc(message.length);
@@ -430,7 +443,7 @@ Session.prototype['decrypt'] = restore_stack(function(
         // caculating the length destroys the input buffer, so we need to re-copy it.
         writeAsciiToMemory(message, message_buffer, true);
 
-        plaintext_buffer = malloc(max_plaintext_length + NULL_BYTE_PADDING_LENGTH);
+        plaintext_buffer = malloc(max_plaintext_length + (return_type === String ? NULL_BYTE_PADDING_LENGTH : 0));
 
         var plaintext_length = session_method(Module["_olm_decrypt"])(
             this.ptr, message_type,
@@ -438,14 +451,20 @@ Session.prototype['decrypt'] = restore_stack(function(
             plaintext_buffer, max_plaintext_length
         );
 
-        // UTF8ToString requires a null-terminated argument, so add the
-        // null terminator.
-        setValue(
-            plaintext_buffer+plaintext_length,
-            0, "i8"
-        );
-
-        return UTF8ToString(plaintext_buffer);
+        switch (return_type) {
+            case String:
+                // UTF8ToString requires a null-terminated argument, so add the
+                // null terminator.
+                setValue(
+                    plaintext_buffer+plaintext_length,
+                    0, "i8"
+                );
+                return UTF8ToString(plaintext_buffer);
+            case Uint8Array:
+                return Module['HEAPU8'].slice(plaintext_buffer, plaintext_buffer + plaintext_length);
+            default:
+                throw new TypeError('Unsupported return_type');
+        }
     } finally {
         if (message_buffer !== undefined) {
             free(message_buffer);
@@ -458,6 +477,12 @@ Session.prototype['decrypt'] = restore_stack(function(
     }
 
 });
+
+Session.prototype['decrypt_to_buffer'] = function(
+    message_type, message
+) {
+    return Session.prototype['decrypt'](message_type, message, Uint8Array);
+};
 
 function Utility() {
     var size = Module['_olm_utility_size']();
