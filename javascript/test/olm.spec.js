@@ -105,6 +105,10 @@ describe("olm", function() {
         decrypted = bobSession.decrypt(encrypted.type, encrypted.body, Uint8Array);
         console.log(TEST_BUFFER, "->", Buffer.from(decrypted));
         // this version of jasmine can't compare TypedArrays directly
-        expect(Array.from(decrypted)).toEqual(Array.from(TEST_BUFFER));
+        expect(
+            Array.from(decrypted)
+        ).toEqual(
+            Array.from(TEST_BUFFER)
+        );
     });
 });
