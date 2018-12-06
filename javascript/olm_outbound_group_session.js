@@ -73,23 +73,34 @@ OutboundGroupSession.prototype['create'] = restore_stack(function() {
 });
 
 OutboundGroupSession.prototype['encrypt'] = function(plaintext) {
-    var plaintext_buffer, message_buffer, plaintext_length;
+    var plaintext_buffer, message_buffer, plaintext_length, plaintext_alloc_size;
     try {
-        plaintext_length = lengthBytesUTF8(plaintext);
+        if (plaintext instanceof Uint8Array) {
+            plaintext_length = plaintext.length;
+            plaintext_alloc_size = plaintext_length;
+        } else {
+            plaintext_length = lengthBytesUTF8(plaintext);
+            // need to allow space for the terminator (which stringToUTF8 always
+            // writes), hence + 1.
+            plaintext_alloc_size = plaintext_length + NULL_BYTE_PADDING_LENGTH;
+        }
 
         var message_length = outbound_group_session_method(
             Module['_olm_group_encrypt_message_length']
         )(this.ptr, plaintext_length);
 
-        // need to allow space for the terminator (which stringToUTF8 always
-        // writes), hence + 1.
-        plaintext_buffer = malloc(plaintext_length + 1);
-        stringToUTF8(plaintext, plaintext_buffer, plaintext_length + 1);
+        plaintext_buffer = malloc(plaintext_alloc_size);
+        if (plaintext instanceof Uint8Array) {
+            // TODO: find emscripten helper function for this memory write
+            (new Uint8Array(Module['HEAPU8'].buffer, plaintext_buffer, plaintext_length)).set(plaintext);
+        } else {
+            stringToUTF8(plaintext, plaintext_buffer, plaintext_alloc_size);
+        }
 
         message_buffer = malloc(message_length + NULL_BYTE_PADDING_LENGTH);
         outbound_group_session_method(Module['_olm_group_encrypt'])(
             this.ptr,
-            plaintext_buffer, plaintext_length,
+            plaintext_buffer, plaintext_alloc_size,
             message_buffer, message_length
         );
 
@@ -104,7 +115,7 @@ OutboundGroupSession.prototype['encrypt'] = function(plaintext) {
     } finally {
         if (plaintext_buffer !== undefined) {
             // don't leave a copy of the plaintext in the heap.
-            bzero(plaintext_buffer, plaintext_length + 1);
+            bzero(plaintext_buffer, plaintext_alloc_size);
             free(plaintext_buffer);
         }
         if (message_buffer !== undefined) {
