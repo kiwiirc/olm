@@ -360,7 +360,7 @@ Session.prototype['matches_inbound_from'] = restore_stack(function(
 Session.prototype['encrypt'] = restore_stack(function(
     plaintext
 ) {
-    var plaintext_buffer, message_buffer, plaintext_length, random, random_length, plaintext_alloc_length;
+    var plaintext_buffer, message_buffer, plaintext_length, random, random_length, plaintext_alloc_size;
     try {
         random_length = session_method(
             Module['_olm_encrypt_random_length']
@@ -370,7 +370,7 @@ Session.prototype['encrypt'] = restore_stack(function(
         )(this.ptr);
         
         plaintext_length = plaintext instanceof Uint8Array ? plaintext.length : lengthBytesUTF8(plaintext);
-        plaintext_alloc_length = plaintext_length + (plaintext instanceof Uint8Array ? 0 : NULL_BYTE_PADDING_LENGTH);
+        plaintext_alloc_size = plaintext_length + (plaintext instanceof Uint8Array ? 0 : NULL_BYTE_PADDING_LENGTH);
         var message_length = session_method(
             Module['_olm_encrypt_message_length']
         )(this.ptr, plaintext_length);
@@ -379,14 +379,14 @@ Session.prototype['encrypt'] = restore_stack(function(
 
         // need to allow space for the terminator (which stringToUTF8 always
         // writes), hence + 1.
-        plaintext_buffer = malloc(plaintext_alloc_length);
+        plaintext_buffer = malloc(plaintext_alloc_size);
         
         if (plaintext instanceof Uint8Array) {
             // write plaintext to allocated heap buffer
             (new Uint8Array(Module['HEAPU8'].buffer, plaintext_buffer, plaintext_length)).set(plaintext);
             // setValue(plaintext_buffer, plaintext, 'i8') // TODO: didn't work i guess? investigate if there's something like this that simply replaces the above line
         } else {
-            stringToUTF8(plaintext, plaintext_buffer, plaintext_alloc_length);
+            stringToUTF8(plaintext, plaintext_buffer, plaintext_alloc_size);
         }
 
         message_buffer = malloc(message_length + NULL_BYTE_PADDING_LENGTH);
@@ -416,7 +416,7 @@ Session.prototype['encrypt'] = restore_stack(function(
         }
         if (plaintext_buffer !== undefined) {
             // don't leave a copy of the plaintext in the heap.
-            bzero(plaintext_buffer, plaintext_alloc_length);
+            bzero(plaintext_buffer, plaintext_alloc_size);
             free(plaintext_buffer);
         }
         if (message_buffer !== undefined) {
@@ -428,7 +428,7 @@ Session.prototype['encrypt'] = restore_stack(function(
 Session.prototype['decrypt'] = restore_stack(function(
     message_type, message, return_type
 ) {
-    var message_buffer, plaintext_buffer, max_plaintext_length;
+    var message_buffer, plaintext_buffer, max_plaintext_length, plaintext_alloc_size;
 
     return_type = return_type || String
 
@@ -443,7 +443,8 @@ Session.prototype['decrypt'] = restore_stack(function(
         // caculating the length destroys the input buffer, so we need to re-copy it.
         writeAsciiToMemory(message, message_buffer, true);
 
-        plaintext_buffer = malloc(max_plaintext_length + (return_type === String ? NULL_BYTE_PADDING_LENGTH : 0));
+        plaintext_alloc_size = max_plaintext_length + (return_type === String ? NULL_BYTE_PADDING_LENGTH : 0);
+        plaintext_buffer = malloc(plaintext_alloc_size);
 
         var plaintext_length = session_method(Module["_olm_decrypt"])(
             this.ptr, message_type,
@@ -463,7 +464,7 @@ Session.prototype['decrypt'] = restore_stack(function(
             case Uint8Array:
                 return Module['HEAPU8'].slice(plaintext_buffer, plaintext_buffer + plaintext_length);
             default:
-                throw new TypeError('Unsupported return_type');
+                throw new TypeError('Unsupported return type');
         }
     } finally {
         if (message_buffer !== undefined) {
@@ -471,18 +472,12 @@ Session.prototype['decrypt'] = restore_stack(function(
         }
         if (plaintext_buffer !== undefined) {
             // don't leave a copy of the plaintext in the heap.
-            bzero(plaintext_buffer, max_plaintext_length + NULL_BYTE_PADDING_LENGTH);
+            bzero(plaintext_buffer, plaintext_alloc_size);
             free(plaintext_buffer);
         }
     }
 
 });
-
-Session.prototype['decrypt_to_buffer'] = function(
-    message_type, message
-) {
-    return Session.prototype['decrypt'](message_type, message, Uint8Array);
-};
 
 function Utility() {
     var size = Module['_olm_utility_size']();
