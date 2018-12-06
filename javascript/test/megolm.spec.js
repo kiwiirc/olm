@@ -69,5 +69,16 @@ describe("megolm", function() {
         console.log(TEST_TEXT, "->", decrypted);
         expect(decrypted.plaintext).toEqual(TEST_TEXT);
         expect(decrypted.message_index).toEqual(2);
+
+        var TEST_BUFFER = Buffer.from('0000deadbeef0000', 'hex');
+        encrypted = aliceSession.encrypt(TEST_BUFFER);
+        decrypted = bobSession.decrypt(encrypted, Uint8Array);
+        console.log(TEST_BUFFER, "->", Buffer.from(decrypted.plaintext));
+        // this version of jasmine can't compare TypedArrays directly
+        expect(
+            Array.from(decrypted.plaintext)
+        ).toEqual(
+            Array.from(TEST_BUFFER)
+        );
     });
 });
