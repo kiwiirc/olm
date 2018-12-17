@@ -4,10 +4,18 @@ include common.mk
 VERSION := $(MAJOR).$(MINOR).$(PATCH)
 PREFIX ?= /usr/local
 BUILD_DIR := build
-RELEASE_OPTIMIZE_FLAGS ?= -g -O3
+
+# RELEASE_OPTIMIZE_FLAGS ?= -g -O3
+# DEBUG_OPTIMIZE_FLAGS ?= -g -O0
+# JS_OPTIMIZE_FLAGS ?= -O3
+# FUZZING_OPTIMIZE_FLAGS ?= -O3
+
+# disable optimizations
+RELEASE_OPTIMIZE_FLAGS ?= -g -O0
 DEBUG_OPTIMIZE_FLAGS ?= -g -O0
-JS_OPTIMIZE_FLAGS ?= -O3
-FUZZING_OPTIMIZE_FLAGS ?= -O3
+FUZZING_OPTIMIZE_FLAGS ?= -g -O0
+export EMCC_CLOSURE_ARGS = --debug
+
 CC = gcc
 EMCC = emcc
 AFL_CC = afl-gcc
@@ -84,10 +92,10 @@ CFLAGS += -Wall -Werror -std=c99 -fPIC
 CXXFLAGS += -Wall -Werror -std=c++11 -fPIC
 LDFLAGS += -Wall -Werror
 
-EMCCFLAGS = --closure 1 --memory-init-file 0 -s NO_FILESYSTEM=1 -s INVOKE_RUN=0 -s MODULARIZE=1
+EMCCFLAGS = --closure 0 --memory-init-file 0 -s NO_FILESYSTEM=1 -s INVOKE_RUN=0 -s MODULARIZE=1 -s SINGLE_FILE=1
 # NO_BROWSER is kept for compatibility with emscripten 1.35.24, but is no
 # longer needed.
-EMCCFLAGS += -s NO_BROWSER=1
+#EMCCFLAGS += -s NO_BROWSER=1
 
 # Olm generally doesn't need a lot of memory to encrypt / decrypt its usual
 # payloads (ie. Matrix messages), but we do need about 128K of heap to encrypt
