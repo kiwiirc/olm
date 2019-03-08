@@ -8,7 +8,7 @@ function pk_encryption_method(wrapped) {
     return function() {
         var result = wrapped.apply(this, arguments);
         if (result === OLM_ERROR) {
-            var message = Pointer_stringify(
+            var message = UTF8ToString(
                 Module['_olm_pk_encryption_last_error'](arguments[0])
             );
             throw new Error("OLM." + message);
@@ -78,8 +78,8 @@ PkEncryption.prototype['encrypt'] = restore_stack(function(
         );
         return {
             "ciphertext": UTF8ToString(ciphertext_buffer),
-            "mac": Pointer_stringify(mac_buffer),
-            "ephemeral": Pointer_stringify(ephemeral_buffer)
+            "mac": UTF8ToString(mac_buffer),
+            "ephemeral": UTF8ToString(ephemeral_buffer)
         };
     } finally {
         if (random !== undefined) {
@@ -108,7 +108,7 @@ function pk_decryption_method(wrapped) {
     return function() {
         var result = wrapped.apply(this, arguments);
         if (result === OLM_ERROR) {
-            var message = Pointer_stringify(
+            var message = UTF8ToString(
                 Module['_olm_pk_decryption_last_error'](arguments[0])
             );
             throw new Error("OLM." + message);
@@ -140,7 +140,7 @@ PkDecryption.prototype['init_with_private_key'] = restore_stack(function (privat
         // clear out our copy of the private key
         bzero(private_key_buffer, private_key.length);
     }
-    return Pointer_stringify(pubkey_buffer);
+    return UTF8ToString(pubkey_buffer);
 });
 
 PkDecryption.prototype['generate_key'] = restore_stack(function () {
@@ -162,7 +162,7 @@ PkDecryption.prototype['generate_key'] = restore_stack(function () {
         // clear out the random buffer (= private key)
         bzero(random_buffer, random_length);
     }
-    return Pointer_stringify(pubkey_buffer);
+    return UTF8ToString(pubkey_buffer);
 });
 
 PkDecryption.prototype['get_private_key'] = restore_stack(function () {
@@ -202,7 +202,7 @@ PkDecryption.prototype['pickle'] = restore_stack(function (key) {
             key_array[i] = 0;
         }
     }
-    return Pointer_stringify(pickle_buffer);
+    return UTF8ToString(pickle_buffer);
 });
 
 PkDecryption.prototype['unpickle'] = restore_stack(function (key, pickle) {
@@ -226,7 +226,7 @@ PkDecryption.prototype['unpickle'] = restore_stack(function (key, pickle) {
             key_array[i] = 0;
         }
     }
-    return Pointer_stringify(ephemeral_buffer);
+    return UTF8ToString(ephemeral_buffer);
 });
 
 PkDecryption.prototype['decrypt'] = restore_stack(function (

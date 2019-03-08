@@ -12,7 +12,7 @@ function sas_method(wrapped) {
     return function() {
         var result = wrapped.apply(this, arguments);
         if (result === OLM_ERROR) {
-            var message = Pointer_stringify(
+            var message = UTF8ToString(
                 Module['_olm_sas_last_error'](arguments[0])
             );
             throw new Error("OLM." + message);
@@ -30,7 +30,7 @@ SAS.prototype['get_pubkey'] = restore_stack(function() {
     var pubkey_length = sas_method(Module['_olm_sas_pubkey_length'])(this.ptr);
     var pubkey_buffer = stack(pubkey_length + NULL_BYTE_PADDING_LENGTH);
     sas_method(Module['_olm_sas_get_pubkey'])(this.ptr, pubkey_buffer, pubkey_length);
-    return Pointer_stringify(pubkey_buffer);
+    return UTF8ToString(pubkey_buffer);
 });
 
 SAS.prototype['set_their_key'] = restore_stack(function(their_key) {
@@ -73,5 +73,5 @@ SAS.prototype['calculate_mac'] = restore_stack(function(input, info) {
         info_buffer, info_array.length,
         mac_buffer, mac_length
     );
-    return Pointer_stringify(mac_buffer);
+    return UTF8ToString(mac_buffer);
 });

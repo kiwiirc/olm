@@ -49,7 +49,7 @@ function account_method(wrapped) {
     return function() {
         var result = wrapped.apply(this, arguments);
         if (result === OLM_ERROR) {
-            var message = Pointer_stringify(
+            var message = UTF8ToString(
                 Module['_olm_account_last_error'](arguments[0])
             );
             throw new Error("OLM." + message);
@@ -81,7 +81,7 @@ Account.prototype['identity_keys'] = restore_stack(function() {
     account_method(Module['_olm_account_identity_keys'])(
         this.ptr, keys, keys_length
     );
-    return Pointer_stringify(keys);
+    return UTF8ToString(keys);
 });
 
 Account.prototype['sign'] = restore_stack(function(message) {
@@ -104,7 +104,7 @@ Account.prototype['sign'] = restore_stack(function(message) {
             message_array[i] = 0;
         }
     }
-    return Pointer_stringify(signature_buffer);
+    return UTF8ToString(signature_buffer);
 });
 
 Account.prototype['one_time_keys'] = restore_stack(function() {
@@ -115,7 +115,7 @@ Account.prototype['one_time_keys'] = restore_stack(function() {
     account_method(Module['_olm_account_one_time_keys'])(
         this.ptr, keys, keys_length
     );
-    return Pointer_stringify(keys);
+    return UTF8ToString(keys);
 });
 
 Account.prototype['mark_keys_as_published'] = restore_stack(function() {
@@ -164,7 +164,7 @@ Account.prototype['pickle'] = restore_stack(function(key) {
             key_array[i] = 0;
         }
     }
-    return Pointer_stringify(pickle_buffer);
+    return UTF8ToString(pickle_buffer);
 });
 
 Account.prototype['unpickle'] = restore_stack(function(key, pickle) {
@@ -196,7 +196,7 @@ function session_method(wrapped) {
     return function() {
         var result = wrapped.apply(this, arguments);
         if (result === OLM_ERROR) {
-            var message = Pointer_stringify(
+            var message = UTF8ToString(
                 Module['_olm_session_last_error'](arguments[0])
             );
             throw new Error("OLM." + message);
@@ -228,7 +228,7 @@ Session.prototype['pickle'] = restore_stack(function(key) {
             key_array[i] = 0;
         }
     }
-    return Pointer_stringify(pickle_buffer);
+    return UTF8ToString(pickle_buffer);
 });
 
 Session.prototype['unpickle'] = restore_stack(function(key, pickle) {
@@ -320,7 +320,7 @@ Session.prototype['session_id'] = restore_stack(function() {
     session_method(Module['_olm_session_id'])(
         this.ptr, id_buffer, id_length
     );
-    return Pointer_stringify(id_buffer);
+    return UTF8ToString(id_buffer);
 });
 
 Session.prototype['has_received_message'] = function() {
@@ -469,7 +469,7 @@ function utility_method(wrapped) {
     return function() {
         var result = wrapped.apply(this, arguments);
         if (result === OLM_ERROR) {
-            var message = Pointer_stringify(
+            var message = UTF8ToString(
                 Module['_olm_utility_last_error'](arguments[0])
             );
             throw new Error("OLM." + message);
@@ -501,7 +501,7 @@ Utility.prototype['sha256'] = restore_stack(function(input) {
             input_array[i] = 0;
         }
     }
-    return Pointer_stringify(output_buffer);
+    return UTF8ToString(output_buffer);
 });
 
 Utility.prototype['ed25519_verify'] = restore_stack(function(

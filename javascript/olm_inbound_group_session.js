@@ -8,7 +8,7 @@ function inbound_group_session_method(wrapped) {
     return function() {
         var result = wrapped.apply(this, arguments);
         if (result === OLM_ERROR) {
-            var message = Pointer_stringify(
+            var message = UTF8ToString(
                 Module['_olm_inbound_group_session_last_error'](arguments[0])
             );
             throw new Error("OLM." + message);
@@ -40,7 +40,7 @@ InboundGroupSession.prototype['pickle'] = restore_stack(function(key) {
             key_array[i] = 0;
         }
     }
-    return Pointer_stringify(pickle_buffer);
+    return UTF8ToString(pickle_buffer);
 });
 
 InboundGroupSession.prototype['unpickle'] = restore_stack(function(key, pickle) {
@@ -155,7 +155,7 @@ InboundGroupSession.prototype['session_id'] = restore_stack(function() {
     inbound_group_session_method(Module['_olm_inbound_group_session_id'])(
         this.ptr, session_id, length
     );
-    return Pointer_stringify(session_id);
+    return UTF8ToString(session_id);
 });
 
 InboundGroupSession.prototype['first_known_index'] = restore_stack(function() {
@@ -172,7 +172,7 @@ InboundGroupSession.prototype['export_session'] = restore_stack(function(message
     outbound_group_session_method(Module['_olm_export_inbound_group_session'])(
         this.ptr, key, key_length, message_index
     );
-    var key_str = Pointer_stringify(key);
+    var key_str = UTF8ToString(key);
     bzero(key, key_length); // clear out a copy of the key
     return key_str;
 });
