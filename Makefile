@@ -42,7 +42,7 @@ JS_EXPORTED_FUNCTIONS := javascript/exported_functions.json
 JS_EXTRA_EXPORTED_RUNTIME_METHODS := ALLOC_STACK
 JS_EXTERNS := javascript/externs.js
 
-PUBLIC_HEADERS := include/olm/olm.h include/olm/outbound_group_session.h include/olm/inbound_group_session.h include/olm/pk.h
+PUBLIC_HEADERS := include/olm/olm.h include/olm/outbound_group_session.h include/olm/inbound_group_session.h include/olm/pk.h include/olm/sas.h
 
 SOURCES := $(wildcard src/*.cpp) $(wildcard src/*.c) \
     lib/crypto-algorithms/sha256.c \
@@ -68,6 +68,7 @@ JS_PRE := $(wildcard javascript/*pre.js)
 JS_POST := javascript/olm_outbound_group_session.js \
     javascript/olm_inbound_group_session.js \
     javascript/olm_pk.js \
+    javascript/olm_sas.js \
     javascript/olm_post.js
 
 # The prefix & suffix are just added onto the start & end
@@ -93,9 +94,6 @@ CXXFLAGS += -Wall -Werror -std=c++11 -fPIC
 LDFLAGS += -Wall -Werror
 
 EMCCFLAGS = --closure 0 --memory-init-file 0 -s NO_FILESYSTEM=1 -s INVOKE_RUN=0 -s MODULARIZE=1 -s SINGLE_FILE=1
-# NO_BROWSER is kept for compatibility with emscripten 1.35.24, but is no
-# longer needed.
-#EMCCFLAGS += -s NO_BROWSER=1
 
 # Olm generally doesn't need a lot of memory to encrypt / decrypt its usual
 # payloads (ie. Matrix messages), but we do need about 128K of heap to encrypt
