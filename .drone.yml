@@ -1,0 +1,45 @@
+---
+kind: pipeline
+name: default
+
+steps:
+- name: build
+  image: vith/archlinux-olm-build-deps
+  commands:
+  - source /etc/profile.d/emscripten.sh
+  - cd javascript
+  - npm install --no-package-lock
+  - npm run-script build
+  - npm test
+  - npm pack
+
+# - name: publish
+#   image: plugins/github-release
+#   settings:
+#     api_key:
+#       from_secret: github-personal-access-token
+#     files: javascript/olm-${DRONE_TAG}.tgz
+#   environment:
+#     DRONE_REPO_OWNER: kiwiirc
+#     DRONE_REPO_NAME: olm
+#   when:
+#     event: tag
+
+- name: release
+  image: golang
+  environment:
+    GITHUB_TOKEN:
+      from_secret: github-personal-access-token
+    GITHUB_USER: kiwiirc
+    GITHUB_REPO: olm
+  commands:
+  - go get github.com/aktau/github-release
+  - github-release release
+      --tag "${DRONE_TAG}"
+      --draft
+  - github-release upload
+      --tag "${DRONE_TAG}"
+      --file "javascript/olm-${DRONE_TAG##v}.tgz"
+      --name "olm-${DRONE_TAG##v}.tgz"
+  when:
+    event: tag
